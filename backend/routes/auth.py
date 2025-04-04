@@ -3,10 +3,13 @@ from schemas import RegisterRequest, LoginRequest, TokenResponse
 from db import get_connection
 import bcrypt
 import jwt
+from dotenv import load_dotenv
+import os
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
 
-SECRET_KEY = "dev-secret-key"  # позже — из .env
+load_dotenv()
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 @router.post("/register", response_model=TokenResponse)
 def register(user: RegisterRequest):
