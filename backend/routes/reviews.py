@@ -113,20 +113,20 @@ def update_review(
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Найдём обзор
+
     cursor.execute("SELECT * FROM reviews WHERE id = %s", (review_id,))
     review = cursor.fetchone()
 
     if not review:
         raise HTTPException(status_code=404, detail="Обзор не найден")
 
-    # Получим nickname текущего пользователя
+    
     cursor.execute("SELECT nickname FROM users WHERE email = %s", (current_user["email"],))
     user = cursor.fetchone()
     if not user or review["nickname"] != user["nickname"]:
         raise HTTPException(status_code=403, detail="Вы не автор этого обзора")
 
-    # Обновим нужные поля
+   
     new_title = data.title if data.title else review["title"]
     new_content = data.content if data.content else review["content"]
 
