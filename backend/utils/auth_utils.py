@@ -1,10 +1,17 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 import jwt
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY не найден в .env файле")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
-SECRET_KEY = "dev-secret-key"
 
 def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
     try:
@@ -21,6 +28,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
         }
 
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Токен истёк")
+        raise HTTPException(status_code=401, detail="Срок действия токена истёк")
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Невалидный токен")
