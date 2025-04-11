@@ -22,7 +22,7 @@ class ReviewUpdate(BaseModel):
 
 class LoginRequest(BaseModel):
     email: str
-    password: str  
+    password: str
 
 class RegisterRequest(BaseModel):
     email: str
@@ -58,6 +58,10 @@ class CommentOut(BaseModel):
 class CommentUpdate(BaseModel):
     content: str
 
+class LikeCreate(BaseModel):
+    user_email: str
+    review_id: int
 
-
-
+class DislikeCreate(BaseModel):
+    user_email: str
+    review_id: int

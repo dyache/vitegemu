@@ -15,98 +15,51 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
-   
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            email VARCHAR(255) UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        );
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        nickname VARCHAR(100),
+        bio TEXT,
+        is_admin BOOLEAN DEFAULT FALSE
+    );
     """)
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS reviews (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR(255) NOT NULL,
-            content TEXT NOT NULL
-        );
+    CREATE TABLE IF NOT EXISTS reviews (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        user_email VARCHAR(255) REFERENCES users(email) ON DELETE SET NULL,
+        nickname VARCHAR(100) REFERENCES users(nickname) ON DELETE SET NULL
+    );
     """)
 
     cursor.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (
-                SELECT 1 FROM information_schema.columns 
-                WHERE table_name='reviews' AND column_name='user_email'
-            ) THEN
-                ALTER TABLE reviews ADD COLUMN user_email VARCHAR(255);
-            END IF;
-        END;
-        $$;
+    CREATE TABLE IF NOT EXISTS likes (
+        user_email VARCHAR(100) REFERENCES users(email) ON DELETE CASCADE
+        review_id INTEGER REFERENCES reviews(id) ON DELETE CASCADE
+    );
     """)
 
-
     cursor.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (
-                SELECT 1 FROM information_schema.columns
-                WHERE table_name = 'users' AND column_name = 'nickname'
-            ) THEN
-                ALTER TABLE users ADD COLUMN nickname VARCHAR(100);
-            END IF;
-        END;
-        $$;
-    
-                   
-        DO $$
-    BEGIN
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns
-            WHERE table_name = 'reviews' AND column_name = 'nickname'
-        ) THEN
-            ALTER TABLE reviews ADD COLUMN nickname VARCHAR(100);
-        END IF;
-    END;
-    $$;
+    CREATE TABLE IF NOT EXISTS dislikes (
+        user_email VARCHAR(100) REFERENCES users(email) ON DELETE CASCADE
+        review_id INTEGER REFERENCES reviews(id) ON DELETE CASCADE
+    );
     """)
 
-
     cursor.execute("""
-    DO $$
-    BEGIN
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns
-            WHERE table_name = 'users' AND column_name = 'bio'
-        ) THEN
-            ALTER TABLE users ADD COLUMN bio TEXT;
-        END IF;
-    END;
-    $$;
-""")
-    
-    cursor.execute("""
-    DO $$
-    BEGIN
-        IF NOT EXISTS (
-            SELECT 1 FROM information_schema.columns
-            WHERE table_name = 'users' AND column_name = 'is_admin'
-        ) THEN
-            ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
-        END IF;
-    END;
-    $$;
-""")
-    
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS comments (
-            id SERIAL PRIMARY KEY,
-            review_id INTEGER REFERENCES reviews(id) ON DELETE CASCADE,
-            author_nickname TEXT,
-            content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW()
-        );
+    CREATE TABLE IF NOT EXISTS comments (
+        id SERIAL PRIMARY KEY,
+        review_id INTEGER REFERENCES reviews(id) ON DELETE CASCADE,
+        author_nickname TEXT REFERENCES users(nickname) ON DELETE SET NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
     """)
+
 
 
 
