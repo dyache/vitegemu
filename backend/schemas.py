@@ -59,9 +59,10 @@ class CommentUpdate(BaseModel):
     content: str
 
 class LikeCreate(BaseModel):
-    user_email: str
     review_id: int
 
 class DislikeCreate(BaseModel):
-    user_email: str
     review_id: int
+
+class CountResponse(BaseModel):
+    count: int

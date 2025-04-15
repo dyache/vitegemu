@@ -2,7 +2,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 def get_connection():
-    return psycopg2.connect(
+   return psycopg2.connect(
         host="localhost",
         port=5432,
         database="postgres",
@@ -20,7 +20,7 @@ def init_db():
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        nickname VARCHAR(100),
+        nickname VARCHAR(100) UNIQUE,
         bio TEXT,
         is_admin BOOLEAN DEFAULT FALSE
     );
@@ -32,20 +32,21 @@ def init_db():
         title VARCHAR(255) NOT NULL,
         content TEXT NOT NULL,
         user_email VARCHAR(255) REFERENCES users(email) ON DELETE SET NULL,
-        nickname VARCHAR(100) REFERENCES users(nickname) ON DELETE SET NULL
+        nickname VARCHAR(100) REFERENCES users(nickname) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW()
     );
     """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS likes (
-        user_email VARCHAR(100) REFERENCES users(email) ON DELETE CASCADE
+        user_email VARCHAR(100) REFERENCES users(email) ON DELETE CASCADE,
         review_id INTEGER REFERENCES reviews(id) ON DELETE CASCADE
     );
     """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS dislikes (
-        user_email VARCHAR(100) REFERENCES users(email) ON DELETE CASCADE
+        user_email VARCHAR(100) REFERENCES users(email) ON DELETE CASCADE,
         review_id INTEGER REFERENCES reviews(id) ON DELETE CASCADE
     );
     """)

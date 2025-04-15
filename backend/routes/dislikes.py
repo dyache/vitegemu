@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from psycopg2.extras import RealDictCursor
-from schemas import LikeCreate
+from schemas import CountResponse, LikeCreate
 from db import get_connection
 from utils.auth_utils import get_current_user
 
@@ -22,23 +22,22 @@ def add_dislike(
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_id = user["id"]
 
-    cursor.execute("SELECT 1 FROM dislikes WHERE user_id = %s AND review_id = %s", (user_id, dislike.review_id))
+    cursor.execute("SELECT 1 FROM dislikes WHERE user_email = %s AND review_id = %s", (current_user["email"], dislike.review_id))
     if cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=400, detail="Dislike already exists")
 
     cursor.execute(
-        "INSERT INTO dislikes (user_id, review_id) VALUES (%s, %s)",
-        (user_id, dislike.review_id)
+        "INSERT INTO dislikes (user_email, review_id) VALUES (%s, %s)",
+        (current_user["email"], dislike.review_id)
     )
 
     conn.commit()
     conn.close()
 
     return {
-        "user_email": dislike.user_email,
+        "user_email": current_user["email"],
         "review_id": dislike.review_id
     }
 
@@ -50,7 +49,7 @@ def get_dislikes_for_review(review_id: int):
     cursor.execute("""
         SELECT u.email
         FROM dislikes d
-        JOIN users u ON d.user_id = u.id
+        JOIN users u ON d.user_email= u.email
         WHERE d.review_id = %s
     """, (review_id,))
 
@@ -59,7 +58,7 @@ def get_dislikes_for_review(review_id: int):
 
     return [user["email"] for user in users]
 
-@router.get("/{review_id}/dislikes/count", response_model=int)
+@router.get("/{review_id}/dislikes/count", response_model=CountResponse)
 def get_dislikes_count(review_id: int):
     conn = get_connection()
     cursor = conn.cursor()
@@ -71,7 +70,7 @@ def get_dislikes_count(review_id: int):
     if result is None:
         return 0
 
-    return result[0]
+    return {"count" : result['count']} 
 
 @router.delete("/{review_id}/dislikes", status_code=204)
 def delete_dislike(
@@ -88,9 +87,7 @@ def delete_dislike(
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_id = user[0]
-
-    cursor.execute("DELETE FROM dislikes WHERE user_id = %s AND review_id = %s", (user_id, review_id))
+    cursor.execute("DELETE FROM dislikes WHERE user_email= %s AND review_id = %s", (current_user["email"], review_id))
 
     if cursor.rowcount == 0:
         conn.close()

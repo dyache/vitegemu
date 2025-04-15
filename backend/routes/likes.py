@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from psycopg2.extras import RealDictCursor
-from schemas import LikeCreate
+from schemas import CountResponse, LikeCreate
 from db import get_connection
 from utils.auth_utils import get_current_user
 
@@ -13,6 +13,7 @@ def add_like(
     like: LikeCreate,
     current_user: dict = Depends(get_current_user)
 ):
+    print(current_user)
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
@@ -23,18 +24,17 @@ def add_like(
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_id = user["id"]
 
     # Optional: prevent duplicate likes
-    cursor.execute("SELECT 1 FROM likes WHERE user_id = %s AND review_id = %s", (user_id, like.review_id))
+    cursor.execute("SELECT 1 FROM likes WHERE user_email = %s AND review_id = %s", (current_user["email"], like.review_id))
     if cursor.fetchone():
         conn.close()
         raise HTTPException(status_code=400, detail="Like already exists")
 
     # Insert the like
     cursor.execute(
-        "INSERT INTO likes (user_id, review_id) VALUES (%s, %s)",
-        (user_id, like.review_id)
+        "INSERT INTO likes (user_email, review_id) VALUES (%s, %s)",
+        (current_user["email"], like.review_id)
     )
 
     conn.commit()
@@ -53,7 +53,7 @@ def get_likes_for_review(review_id: int):
     cursor.execute("""
         SELECT u.email
         FROM likes l
-        JOIN users u ON l.user_id = u.id
+        JOIN users u ON l.user_email = u.email
         WHERE l.review_id = %s
     """, (review_id,))
 
@@ -62,7 +62,7 @@ def get_likes_for_review(review_id: int):
 
     return [user["email"] for user in users]
 
-@router.get("/{review_id}/likes/count", response_model=int)
+@router.get("/{review_id}/likes/count", response_model=CountResponse)
 def get_likes_count(review_id: int):
     conn = get_connection()
     cursor = conn.cursor()
@@ -74,7 +74,8 @@ def get_likes_count(review_id: int):
     if result is None:
         return 0  # fallback if something's off
 
-    return result[0]
+
+    return {"count" : result['count']} 
 
 @router.delete("/{review_id}/likes", status_code=204)
 def delete_like(
@@ -92,9 +93,8 @@ def delete_like(
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_id = user[0]
 
-    cursor.execute("DELETE FROM likes WHERE user_id = %s AND review_id = %s", (user_id, review_id))
+    cursor.execute("DELETE FROM likes WHERE user_email = %s AND review_id = %s", (current_user["email"], review_id))
 
     if cursor.rowcount == 0:
         conn.close()
