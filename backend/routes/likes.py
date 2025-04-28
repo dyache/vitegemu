@@ -41,7 +41,6 @@ def add_like(
     conn.close()
 
     return {
-        "user_email": like.user_email,
         "review_id": like.review_id
     }
 
@@ -102,3 +101,37 @@ def delete_like(
 
     conn.commit()
     conn.close()
+
+
+@router.post("/toggle", response_model=LikeCreate)
+def toggle_like(
+    like: LikeCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+    email = current_user["email"]
+
+    # Удаляем дизлайк, если он есть
+    cursor.execute("DELETE FROM dislikes WHERE user_email = %s AND review_id = %s", (email, like.review_id))
+
+    # Проверка на существующий лайк
+    cursor.execute("SELECT 1 FROM likes WHERE user_email = %s AND review_id = %s", (email, like.review_id))
+    existing_like = cursor.fetchone()
+
+    if existing_like:
+        # Удаляем лайк (отмена)
+        cursor.execute("DELETE FROM likes WHERE user_email = %s AND review_id = %s", (email, like.review_id))
+        conn.commit()
+        conn.close()
+        raise HTTPException(status_code=200, detail="Like removed")
+    else:
+        # Добавляем лайк
+        cursor.execute(
+            "INSERT INTO likes (user_email, review_id) VALUES (%s, %s)",
+            (email, like.review_id)
+        )
+        conn.commit()
+        conn.close()
+        return {"review_id": like.review_id}

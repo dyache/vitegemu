@@ -37,7 +37,6 @@ def add_dislike(
     conn.close()
 
     return {
-        "user_email": current_user["email"],
         "review_id": dislike.review_id
     }
 
@@ -95,3 +94,40 @@ def delete_dislike(
 
     conn.commit()
     conn.close()
+
+
+
+@router.post("/toggle", response_model=LikeCreate)
+def toggle_dislike(
+    dislike: LikeCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+    email = current_user["email"]
+
+    # Удаляем лайк, если он есть
+    cursor.execute("DELETE FROM likes WHERE user_email = %s AND review_id = %s", (email, dislike.review_id))
+
+    # Проверка на существующий дизлайк
+    cursor.execute("SELECT 1 FROM dislikes WHERE user_email = %s AND review_id = %s", (email, dislike.review_id))
+    existing_dislike = cursor.fetchone()
+
+    if existing_dislike:
+        # Удаляем дизлайк (отмена)
+        cursor.execute("DELETE FROM dislikes WHERE user_email = %s AND review_id = %s", (email, dislike.review_id))
+        conn.commit()
+        conn.close()
+        raise HTTPException(status_code=200, detail="Dislike removed")
+    else:
+        # Добавляем дизлайк
+        cursor.execute(
+            "INSERT INTO dislikes (user_email, review_id) VALUES (%s, %s)",
+            (email, dislike.review_id)
+        )
+        conn.commit()
+        conn.close()
+        return {"review_id": dislike.review_id}
+
+

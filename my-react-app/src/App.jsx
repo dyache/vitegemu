@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Home }from "./pages/Home";
-import {ReviewPage} from "./pages/ReviewPage";
-import {CreateReview} from "./pages/CreateReview";
+import { Home } from "./pages/Home";
+import { ReviewPage } from "./pages/ReviewPage";
+import { CreateReview } from "./pages/CreateReview";
 import { AuthPage } from "./pages/AuthPage";
-import {Profile} from "./pages/Profile";
+import { Profile } from "./pages/Profile";
 import { Navbar } from "./Components/NavBar";
-import { Reviews } from "./pages/reviews"
+import { Reviews } from "./pages/reviews";
+import Esports from "./pages/Esports";
+import OtherProfile from "./pages/OtherProfile";
 
 export default function App() {
   return (
@@ -20,6 +22,8 @@ export default function App() {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/reviews" element={<Reviews />} />
+            <Route path="user/:nick" element={<OtherProfile />} />
+            <Route path="/esports" element={<Esports />} />
           </Routes>
         </main>
       </div>

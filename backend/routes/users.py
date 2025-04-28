@@ -42,3 +42,17 @@ def delete_user_by_email(email: str, current_user: dict = Depends(get_current_us
     conn.close()
 
     return {"message": f"Пользователь {email} удалён"}
+
+@router.get("/profile/{nickname}", response_model=UserOut)
+def get_user_profile(nickname: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id, email, nickname, bio FROM users WHERE nickname = %s", (nickname,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    return user

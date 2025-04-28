@@ -142,3 +142,26 @@ def update_review(
     conn.close()
 
     return updated
+
+@router.get("/by-nickname/{nickname}", response_model=List[ReviewOut])
+def get_reviews_by_nickname(nickname: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, title, content, nickname, created_at 
+        FROM reviews 
+        WHERE nickname = %s
+        ORDER BY created_at DESC
+    """, (nickname,))
+    reviews = cursor.fetchall()
+    conn.close()
+
+    if not reviews:
+        raise HTTPException(status_code=417, detail="Обзоры не найдены для данного пользователя")
+
+    for r in reviews:
+        if r["nickname"] is None:
+            r["nickname"] = "Аноним"
+
+    return reviews

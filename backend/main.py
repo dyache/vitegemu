@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import reviews  
+from routes import hltv, reviews  
 from db import init_db
 from routes import auth
 from routes import profile
@@ -8,6 +8,7 @@ from routes import users
 from routes import comments
 from routes import likes
 from routes import dislikes
+from routes import vlr
 
 app = FastAPI(title="Gemu API")
 
@@ -31,3 +32,5 @@ app.include_router(users.router)
 app.include_router(comments.router)
 app.include_router(likes.router)
 app.include_router(dislikes.router)
+app.include_router(hltv.router)
+app.include_router(vlr.router)
