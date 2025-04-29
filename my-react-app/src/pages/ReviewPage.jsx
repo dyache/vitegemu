@@ -14,6 +14,11 @@ export function ReviewPage() {
   const [editMode, setEditMode] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
 
+  const [likeCount, setLikeCount] = useState(0);
+  const [dislikeCount, setDislikeCount] = useState(0);
+
+  const navigate = useNavigate();
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -48,6 +53,7 @@ export function ReviewPage() {
 
     fetchData();
     fetchProfile();
+    updateCounts();
   }, [id]);
 
   const reloadComments = async () => {
@@ -56,8 +62,6 @@ export function ReviewPage() {
       setComments(await res.json());
     }
   };
-
-  const navigate = useNavigate();
 
   const handleDeleteReview = async () => {
     const confirm = window.confirm("Удалить этот обзор?");
@@ -131,7 +135,7 @@ export function ReviewPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ content: editedContent }),
-      },
+      }
     );
 
     if (res.ok) {
@@ -167,58 +171,30 @@ export function ReviewPage() {
   const toggleLike = async (reviewId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:8000/likes/toggle",
+        { review_id: reviewId },
         {
-          review_id: reviewId,
-          user_email: "",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      console.log("Liked:", response.data);
-      return response.data;
     } catch (error) {
-      if (
-        error.response?.status === 200 &&
-        error.response?.data?.detail === "Like removed"
-      ) {
-        console.log("Like removed");
-      } else {
-        console.error("Error toggling like:", error);
-      }
+      console.error("Ошибка лайка:", error);
     }
   };
 
   const toggleDislike = async (reviewId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:8000/dislikes/toggle",
+        { review_id: reviewId },
         {
-          review_id: reviewId,
-          user_email: "",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      console.log("Disliked:", response.data);
-      return response.data;
     } catch (error) {
-      if (
-        error.response?.status === 200 &&
-        error.response?.data?.detail === "Dislike removed"
-      ) {
-        console.log("Dislike removed");
-      } else {
-        console.error("Error toggling dislike:", error);
-      }
+      console.error("Ошибка дизлайка:", error);
     }
   };
 
@@ -228,14 +204,12 @@ export function ReviewPage() {
       const response = await axios.get(
         `http://localhost:8000/likes/${reviewId}/likes/count`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       return response.data.count;
     } catch (error) {
-      console.error("Error fetching like count:", error);
+      console.error("Ошибка получения лайков:", error);
       return 0;
     }
   };
@@ -246,20 +220,15 @@ export function ReviewPage() {
       const response = await axios.get(
         `http://localhost:8000/dislikes/${reviewId}/dislikes/count`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       return response.data.count;
     } catch (error) {
-      console.error("Error fetching dislike count:", error);
+      console.error("Ошибка получения дизлайков:", error);
       return 0;
     }
   };
-
-  const [likeCount, setLikeCount] = useState(0);
-  const [dislikeCount, setDislikeCount] = useState(0);
 
   const updateCounts = async () => {
     const likes = await getLikeCount(id);
@@ -267,10 +236,6 @@ export function ReviewPage() {
     setLikeCount(likes);
     setDislikeCount(dislikes);
   };
-
-  useEffect(() => {
-    updateCounts();
-  }, [id]);
 
   const handleLike = async () => {
     await toggleLike(id);
@@ -283,7 +248,7 @@ export function ReviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white py-16 px-6">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white py-16 px-6"> 
       <div className="max-w-4xl mx-auto bg-gray-900 bg-opacity-80 p-8 rounded-xl shadow-xl border border-purple-800">
         {review && (
           <>
@@ -302,6 +267,21 @@ export function ReviewPage() {
             <p className="text-gray-200 text-lg leading-relaxed mb-6">
               {review.content}
             </p>
+
+            {/* Блок с изображениями */}
+            {review.images && review.images.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                {review.images.map((imgPath, index) => (
+                  <div key={index} className="w-full overflow-hidden rounded-lg shadow-md border border-purple-700">
+                    <img
+                      src={`http://localhost:8000/${imgPath.replace(/\\/g, "/")}`}
+                      alt={`Screenshot ${index + 1}`}
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {(currentUser?.nickname === review.nickname ||
               currentUser?.is_admin) && (
@@ -368,111 +348,5 @@ export function ReviewPage() {
             </div>
           </form>
         )}
-
-        <div className="flex flex-row gap-2">
-          <div>
-            <button onClick={() => handleLike(id)}>
-              <ThumbsUp className="hover:text-blue-500" />
-            </button>
-            {likeCount}
-          </div>
-
-          <div>
-            <button onClick={() => handleDislike(id)}>
-              <ThumbsDown className="hover:text-blue-500" />
-            </button>
-            {dislikeCount}
-          </div>
-        </div>
-
-        <hr className="border-purple-600 my-8" />
-
-        <h2 className="text-2xl text-purple-300 font-semibold mb-4">
-          Комментарии
-        </h2>
-
-        {comments.length === 0 ? (
-          <p className="text-gray-400 italic">Пока нет комментариев...</p>
-        ) : (
-          <ul className="space-y-4">
-            {comments.map((c) => (
-              <li
-                key={c.id}
-                className="bg-gray-800 p-4 rounded-lg border border-gray-700 shadow"
-              >
-                {editCommentId === c.id ? (
-                  <>
-                    <textarea
-                      value={editedContent}
-                      onChange={(e) => setEditedContent(e.target.value)}
-                      className="w-full p-2 bg-gray-900 border border-purple-500 rounded text-white"
-                      rows={2}
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={handleSaveEdit}
-                        className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm"
-                      >
-                        💾 Сохранить
-                      </button>
-                      <button
-                        onClick={() => setEditCommentId(null)}
-                        className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm"
-                      >
-                        ✖ Отмена
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm text-gray-200">{c.content}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      — {c.author_nickname},{" "}
-                      {new Date(c.created_at).toLocaleString("ru-RU")}
-                    </p>
-                    {currentUser &&
-                      (currentUser.nickname === c.author_nickname ||
-                        currentUser.is_admin) && (
-                        <div className="flex gap-2 mt-2">
-                          {currentUser.nickname === c.author_nickname && (
-                            <button
-                              onClick={() => handleEdit(c.id, c.content)}
-                              className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm"
-                            >
-                              ✏
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDelete(c.id)}
-                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      )}
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <form onSubmit={handleCommentSubmit} className="mt-6 space-y-2">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            rows="3"
-            className="w-full p-3 bg-gray-900 border border-purple-600 rounded text-white"
-            placeholder="Напишите свой комментарий..."
-          />
-          <button
-            type="submit"
-            className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg transition"
-          >
-            Отправить комментарий
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
+</div>
+</div>)}

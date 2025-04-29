@@ -1,10 +1,14 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from pydantic import BaseModel, HttpUrl
+from typing import List, Optional
+from fastapi import UploadFile, File
 
-class ReviewCreate(BaseModel):
+class CreateReview(BaseModel):
     title: str
     content: str
+    images: Optional[List[UploadFile]] = None
 
 class ReviewOut(BaseModel):
     id: int
