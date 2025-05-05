@@ -92,13 +92,13 @@ export function Profile() {
           </div>
   
           <div>
-            <label className="block text-purple-400 font-semibold mb-1"> Никнейм:</label>
+          <label htmlFor="nickname" className="block text-purple-400 font-semibold mb-1">Никнейм:</label>
             <input
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="w-full p-3 bg-gray-800 text-white border border-purple-700 rounded"
-              required
-            />
+            id="nickname"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            className="w-full p-3 bg-gray-800 text-white border border-purple-700 rounded"
+            required/>
           </div>
   
           <div>
