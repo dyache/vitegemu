@@ -17,9 +17,12 @@ export function ReviewPage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
         const [reviewRes, commentsRes] = await Promise.all([
-          fetch(`http://localhost:8000/reviews/${id}`),
-          fetch(`http://localhost:8000/reviews/${id}/comments`),
+          fetch(`http://localhost:8000/reviews/${id}`, { headers }),
+          fetch(`http://localhost:8000/reviews/${id}/comments`, { headers }),
         ]);
         if (!reviewRes.ok || !commentsRes.ok)
           throw new Error("Ошибка загрузки");
@@ -51,7 +54,11 @@ export function ReviewPage() {
   }, [id]);
 
   const reloadComments = async () => {
-    const res = await fetch(`http://localhost:8000/reviews/${id}/comments`);
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await fetch(`http://localhost:8000/reviews/${id}/comments`, {
+      headers,
+    });
     if (res.ok) {
       setComments(await res.json());
     }
@@ -64,7 +71,6 @@ export function ReviewPage() {
     if (!confirm) return;
 
     const token = localStorage.getItem("token");
-
     const res = await fetch(`http://localhost:8000/reviews/${id}`, {
       method: "DELETE",
       headers: {
@@ -226,7 +232,7 @@ export function ReviewPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:8000/likes/${reviewId}/likes/count`,
+        `http://localhost:8000/likes/${reviewId}/count`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -244,7 +250,7 @@ export function ReviewPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:8000/dislikes/${reviewId}/dislikes/count`,
+        `http://localhost:8000/dislikes/${reviewId}/count`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -363,7 +369,7 @@ export function ReviewPage() {
                 onClick={() => setEditMode(false)}
                 className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-white"
               >
-                ✖ Отмена
+                × Отмена
               </button>
             </div>
           </form>
@@ -419,7 +425,7 @@ export function ReviewPage() {
                         onClick={() => setEditCommentId(null)}
                         className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm"
                       >
-                        ✖ Отмена
+                        × Отмена
                       </button>
                     </div>
                   </>
